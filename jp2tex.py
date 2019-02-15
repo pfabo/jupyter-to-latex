@@ -144,7 +144,7 @@ def filter_tex_label(s, s_type):
     param   s_type - oznacenie filtrovaneho vyrazu (section, subsection ...)
     return  s - filtrovany subor  
     '''
-    cmd = re.compile(r"(\\" + s_type + r"\{[\w\s]*\})\\label\{([-.\w\s]*)\}") #, s)
+    cmd = re.compile(r"(\\" + s_type + r"\{[-.\w\s,-:]*\})\\label\{([-.\w\s]*)\}") #, s)
     offs = 10 
     while True:
         equ = cmd.search(s, offs)      # prehladanie s posunom
