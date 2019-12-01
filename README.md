@@ -2,30 +2,20 @@
 Simple python script for jupyter-notebook to latex conversion.
 
 Convert Jupyter (with LaTeX_envs extension) notebook simple or multiple files to LaTex document. 
-Adds some improvements to conversion process.
-Conversion process is controlled with conv_config.py file.
+Adds some improvements to conversion process. Need Python >= 3.6.
 
-## Conversion consist from following steps:
+1. Download and unpack source files, set path. 
 
-#### Copying original notebook file *.ipynb to temporary destination
-   - creating directory with notebook name
+2. In export directory run *python jp2tex.py -c*
 
-#### Conversion of html image include to latex commands 
+This create config files and tex files from templates (title page etc.) 
 
-At this time is not possible to define image  dimension in conversion from Jupyter to Latex. 
-With script image import with html command (alt and scale parameters are ignored in Jupyter)
+3. Edit *config.py*
 
-    <img src="image.png" width=400px alt="Image text" scale="0.5">
-    
-is replaced in *.ipynb file with latex commands
-    
-    \begin{figure}
-    \centerline{\includegraphics[scale=0.5]{image.png}}
-    \caption{Image text}
-    \end{figure}
-   
-#### Running standard Jupyter to Latex conversion with command
+4.
 
-  jupyter nbconvert --to latex_with_lenvs 
+
+
+
   
 #### Remove and update some terms im LaTeX file - see source code
