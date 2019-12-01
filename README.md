@@ -6,16 +6,14 @@ Adds some improvements to conversion process. Need Python >= 3.6.
 
 1. Download and unpack source files, set path. 
 
-2. In export directory run *python jp2tex.py -c*
+2. In your export directory run *python jp2tex.py -c*
 
 This create config files and tex files from templates (title page etc.) 
 
 3. Edit *config.py*
 
-4.
+Enter path to notebook files and list of chapters.
 
+4. Run *python jp2tex.py*
 
-
-
-  
-#### Remove and update some terms im LaTeX file - see source code
+This generate tex file for every chapter, compile *main.tex* with LaTex.
