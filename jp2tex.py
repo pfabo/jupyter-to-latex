@@ -15,8 +15,9 @@ history
 1.1     doplnenie exportu <img ..>
         doplnenie specialneho formatovania vystupu sympy
 1.2     implementacia <!-- REMOVE-->
-        impleementacia vertikalneho formatovania <!-- SMALLSKIP --> ...
+        implementacia vertikalneho formatovania <!-- SMALLSKIP --> ...
 1.3     upravy ciest a formatovanie vystupu 
+1.4     doplnenie do config pre generovanie kapitoly na novej strane 
 
 Konverzia Jupyter notebookov na LaTex dokument
 ==============================================
@@ -67,7 +68,7 @@ TODO
 
 '''
 
-import re
+import regex as re
 import os
 import sys
 
@@ -93,9 +94,9 @@ def filter_jpn_img(s):
     return  s - filtrovany retazec
     '''
 
-    cmd = re.compile(r'<img src=\\"(?P<img>[\.\w/]*)\\"[,\s]*' + 
+    cmd = re.compile(r'<img src=\\"(?P<img>[\-\.\w/]*)\\"[,\s]*' + 
                      r'(?:width=(?P<width>[\d]*))?[px,\s]*'+ 
-                     r'(?:alt=\\"(?P<alt>[!\+\- \.\w]*)\\")?[,\s]*' +  
+                     r'(?:alt=\\"(?P<alt>[!\+\- \.:,\w()[]*)\\")?[,\s]*' +  
                      r'(?:scale=\\"(?P<scale>[\w\.]*))?' +  
                      r'(.)*>')
 
@@ -137,8 +138,6 @@ def filter_jpn_vertical(s):
     s = s.replace(r'<!-- MEDSKIP -->', r'\\medskip')
     s = s.replace(r'<!-- BIGSKIP -->', r'\\bigskip')
     s = s.replace(r'<!-- NEWPAGE -->', r'\\newpage')
-    #s = s.replace(r'<!-- BR06 -->',  r'\\\\[6pt]')  # nefunguje
-    #s = s.replace(r'<!-- BR12 -->',  r'\\\\[12pt]') # nefunguje
     s = s.replace(r'<!-- BR -->',  r'\\\\')
 
     return s
@@ -300,7 +299,7 @@ import argparse
 if __name__== "__main__":
         
     # Kontrola argumentov
-    parser = argparse.ArgumentParser(description='Konverzia Jupyter notebookov na suubory LaTex-u')
+    parser = argparse.ArgumentParser(description='Konverzia Jupyter notebookov na subory LaTex-u')
     parser.add_argument('--c', '-config',  action='store_true', help='Vygeneruje konfiguracne subory')
 
     args = parser.parse_args()
@@ -368,7 +367,7 @@ if __name__== "__main__":
     img_path.write(r'% generovany subor - needitovat' + '\n\n')
     img_path.write(r'\graphicspath { {./img/}, ' + '\n')
     
-    for [ntb, cp, upd] in config.chapters:
+    for [ntb, cp, upd, nwp] in config.chapters:
         #print(local_path + config.dest + ntb)
         if not os.path.exists(local_path + config.dest + ntb):
             os.makedirs(local_path + config.dest + ntb)
@@ -383,7 +382,8 @@ if __name__== "__main__":
             print('Kopirujem notebook ' + ntb + '.ipynb')
             copyfile(config.source + ntb + '.ipynb', local_path + config.dest + ntb +'/' +  ntb + '.ipynb')
             
-            ch_path.write(r'\newpage' + ' \n')
+            if nwp is True:
+                ch_path.write(r'\newpage' + ' \n')
             ch_path.write(r'\subfile{' + config.dest + ntb + '/' + ntb + '}\n\n')
             
             img_path.write('{' + config.dest + ntb + '/},\n')
@@ -392,9 +392,10 @@ if __name__== "__main__":
     img_path.close()
     ch_path.close()
     
-    os.environ["PYTHONPATH"] += os.pathsep + local_path 
+    #os.environ["PYTHONPATH"] += os.pathsep + local_path 
+    os.environ["PYTHONPATH"] = os.pathsep + local_path 
 
-    for [ntb, cp, upd] in config.chapters:
+    for [ntb, cp, upd, nwp] in config.chapters:
         if upd is True:
             # doplnenie cesty k lokalnej kopii kniznic pre konverziu
             # update notebooku s nastavenim lokalnych kniznic utilit (EXPORT ...)
@@ -423,7 +424,7 @@ if __name__== "__main__":
     # 2. Konverzia Jupyter -> LaTex
     #-----------------------------------------------------------------------
 
-    for [ntb, cp, upd] in config.chapters:
+    for [ntb, cp, upd, nwp] in config.chapters:
         if cp is True:
             # 2.1 Uprava notebookov pred konverziou
             # nacitanie celeho notebooku do textoveho retazca
@@ -444,16 +445,17 @@ if __name__== "__main__":
             # 2.2 Konverzia notebooku do LaTex-u s pomocou latex_lenvs
             #print()
             #print('Konverzia do LaTex-u ')
-            cmd = 'jupyter nbconvert --to latex_with_lenvs ' 
+            cmd = 'jupyter nbconvert  --to latex_with_lenvs ' 
+            #cmd = 'jupyter nbconvert  --to latex ' 
             os.system(cmd + local_path + config.dest + ntb +'/' + ntb  + '.ipynb' + ' --Application.log_level=0')
-            #print()
+            #print(cmd + local_path + config.dest + ntb +'/' + ntb  + '.ipynb' + ' --Application.log_level=0')
         
-
+    
     #-----------------------------------------------------------------------
     # 4. Uprava *tex zdrojovych suborov
     #    Doplnenie a uprava dokumentov pre ich zoradenie v LaTexu
     #-----------------------------------------------------------------------
-    for [ntb, cp, upd] in config.chapters:
+    for [ntb, cp, upd, nwp] in config.chapters:
         if cp is True:
             # otvorenie suboru
             name = local_path + config.dest + ntb +'/' + ntb + '.tex'
@@ -476,20 +478,28 @@ if __name__== "__main__":
             s = s.replace(r'\tightlist','')
             
             # explicitne umiestnenie obrazkov na poziciu [h!]
-            s = s.replace(r'\begin{figure}', r'\begin{figure}[h!]')
+            s = s.replace(r'[htbp]', r'')
+            s = s.replace(r'\begin{figure}', r'\begin{figure}[!ht]')
             # uprava default rozmeru generovanych obrazkov z matplotlib-u
             s = s.replace(r'\adjustimage{max size={0.7\linewidth}{0.3\paperheight}}', 
-                          r'\adjustimage{max size={0.5\linewidth}}')
+                          r'\adjustimage{max size={0.6\linewidth}}')
         
             # 5. Filter na expanziu LaTex vyrazov
+            # zrusenie paragrafov - generuje ich ####
+            s = s.replace(r'\paragraph', r'\subsubsubsection')
+
+            # odstranenie labelov pri kapitolach
             s = filter_tex_verbatim(s)
             s = filter_tex_label(s, 'section')
             s = filter_tex_label(s, 'subsection')
             s = filter_tex_label(s, 'subsubsection')
+            s = filter_tex_label(s, 'subsubsubsection')
+
             
             s = s.replace(r'\section', r'\chapter')
             s = s.replace(r'\subsection', r'\section')
             s = s.replace(r'\subsubsection', r'\subsection')
+            s = s.replace(r'\subsubsubsection', r'\subsubsection')
 
             # ulozenie konvertovaneho zdrojaku
             z=r'\documentclass[../main.tex]{subfiles}' + '\n'
